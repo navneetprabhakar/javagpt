@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: javagpt
+
+server:
+  port: 8080
+
+javagpt:
+  model:
+    name: "gpt2-medium"
+    cache-dir: "./models"
+    max-length: 512
+    temperature: 0.7
+    top-k: 50
+    top-p: 0.9
+
+  performance:
+    batch-size: 1
+    thread-pool-size: 4
+    enable-gpu: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
