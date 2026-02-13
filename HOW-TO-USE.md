@@ -6,11 +6,8 @@
 - **Maven 3.8+** installed
 - **10-15 GB** free disk space
 - **MacBook Air M4 with 24GB RAM** (recommended) or equivalent
-- **Python 3** with `transformers` package (only needed for GPT-2 model downloads)
 
-## Quick Start — Quantized LLM (Recommended)
-
-The primary way to use JavaGPT is with quantized GGUF models via Jlama or llama.cpp. This lets you run models like Llama 2 7B, Mistral 7B, and TinyLlama locally.
+## Quick Start
 
 ### 1. Clone the Repository
 
@@ -77,7 +74,7 @@ java --enable-preview --add-modules jdk.incubator.vector \
 
 The application starts on **port 8080** by default.
 
-## LLM API Usage
+## API Usage
 
 ### Generate Text (JSON Response)
 
@@ -147,6 +144,16 @@ curl http://localhost:8080/api/v1/llm/health
 }
 ```
 
+### Actuator Endpoints
+
+```bash
+# Application health
+curl http://localhost:8080/actuator/health
+
+# Metrics
+curl http://localhost:8080/actuator/metrics
+```
+
 ## Choosing an Engine
 
 JavaGPT supports two inference engines for quantized models. Switch between them via `javagpt.llm.engine` in `application.yml`:
@@ -179,7 +186,7 @@ javagpt:
 - **topP**: Nucleus sampling — considers tokens whose cumulative probability exceeds this threshold.
 - **maxTokens**: Maximum number of tokens to generate in the response.
 
-## LLM Configuration Reference
+## Configuration Reference
 
 ```yaml
 javagpt:
@@ -196,94 +203,6 @@ server:
   port: 8080                   # Server port
 ```
 
----
-
-## GPT-2 Mode (Lightweight Alternative)
-
-For smaller-scale experimentation, JavaGPT also includes a GPT-2 module powered by DJL + PyTorch. This runs independently of the LLM engine.
-
-### Download the GPT-2 Model
-
-```bash
-chmod +x scripts/download-model.sh
-./scripts/download-model.sh gpt2-medium
-```
-
-**Available model sizes:**
-
-| Model | Parameters | RAM Usage | Disk Space |
-|-------|-----------|-----------|------------|
-| `gpt2` | 117M | 2-3 GB | ~500 MB |
-| `gpt2-medium` | 345M | 4-6 GB | ~1.5 GB |
-| `gpt2-large` | 774M | 8-12 GB | ~3 GB |
-| `gpt2-xl` | 1.5B | 16-20 GB | ~6 GB |
-
-### GPT-2 API Usage
-
-**POST** `/api/v1/generate`
-
-```bash
-curl -X POST http://localhost:8080/api/v1/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "The future of artificial intelligence is",
-    "maxTokens": 100,
-    "temperature": 0.7
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "prompt": "The future of artificial intelligence is",
-  "generatedText": "The future of artificial intelligence is bright and full of possibilities...",
-  "processingTimeMs": 340,
-  "inputTokens": 7,
-  "outputTokens": 50
-}
-```
-
-### GPT-2 Configuration
-
-```yaml
-javagpt:
-  model:
-    name: "gpt2-medium"       # Model variant
-    cache-dir: "./models"      # Model storage directory
-    max-length: 512            # Default max generation length
-    temperature: 0.7           # Default temperature
-    top-k: 50                  # Default top-k
-    top-p: 0.9                 # Default top-p
-
-  performance:
-    batch-size: 1              # Inference batch size
-    thread-pool-size: 4        # Worker threads
-    enable-gpu: false          # GPU acceleration (CPU only for Mac ARM)
-```
-
-### GPT-2 Performance Expectations
-
-| Metric | Value |
-|--------|-------|
-| Cold Start | 10-15 seconds |
-| Prompt Processing | 50-100 ms |
-| Token Generation | 20-40 tokens/second |
-| Warm Inference | 200-500 ms per request |
-| Sequential Throughput | 2-5 requests/second |
-
-### Actuator Endpoints
-
-```bash
-# Application health
-curl http://localhost:8080/actuator/health
-
-# Metrics
-curl http://localhost:8080/actuator/metrics
-```
-
----
-
 ## Troubleshooting
 
 ### OutOfMemoryError
@@ -292,7 +211,6 @@ curl http://localhost:8080/actuator/metrics
 
 ### Slow First Request
 - This is expected due to model loading. Subsequent requests will be faster.
-- Cached responses (identical prompts) return instantly via Caffeine cache.
 
 ### LLM Engine Not Starting
 - Ensure `javagpt.llm.enabled` is set to `true` in `application.yml`
@@ -307,12 +225,7 @@ curl http://localhost:8080/actuator/metrics
 - These are expected with `--enable-preview` on Java 21
 - The Vector API is incubating and will be stable in future Java releases
 
-### Native Library Not Found (GPT-2 / DJL)
-- Ensure the correct PyTorch native dependency for your platform is in `pom.xml`
-- For Mac ARM64: `pytorch-native-cpu` with classifier `osx-aarch64`
-
 ### Model Download Fails
 - Check your internet connection
 - Verify HuggingFace is accessible
-- For GGUF: `./scripts/download-gguf-model.sh tinyllama`
-- For GPT-2: `./scripts/download-model.sh gpt2-medium`
+- Try: `./scripts/download-gguf-model.sh tinyllama`

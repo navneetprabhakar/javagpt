@@ -29,8 +29,8 @@ public class LlamaCppEngine implements LlmEngine {
         }
 
         ModelParameters modelParams = new ModelParameters()
-                .setModelFilePath(modelPath)
-                .setNGpuLayers(0);
+                .setModel(modelPath)
+                .setGpuLayers(0);
 
         this.model = new LlamaModel(modelParams);
         this.loaded = true;

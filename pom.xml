@@ -16,12 +16,10 @@
     <artifactId>javagpt</artifactId>
     <version>1.0.0</version>
     <name>JavaGPT</name>
-    <description>Lightweight GPT implementation with Spring Boot and DJL</description>
+    <description>Local LLM inference engine for Java with Jlama and llama.cpp</description>
 
     <properties>
         <java.version>21</java.version>
-        <djl.version>0.27.0</djl.version>
-        <pytorch.version>2.1.1</pytorch.version>
         <jlama.version>0.8.4</jlama.version>
         <java-llama-cpp.version>4.1.0</java-llama-cpp.version>
     </properties>
@@ -38,32 +36,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- DJL Core -->
+        <!-- Spring WebFlux for SSE streaming -->
         <dependency>
-            <groupId>ai.djl</groupId>
-            <artifactId>api</artifactId>
-            <version>${djl.version}</version>
-        </dependency>
-
-        <!-- DJL PyTorch Engine for Mac ARM64 -->
-        <dependency>
-            <groupId>ai.djl.pytorch</groupId>
-            <artifactId>pytorch-engine</artifactId>
-            <version>${djl.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.djl.pytorch</groupId>
-            <artifactId>pytorch-native-cpu</artifactId>
-            <version>${pytorch.version}</version>
-            <classifier>osx-aarch64</classifier>
-        </dependency>
-
-        <!-- DJL HuggingFace Tokenizers -->
-        <dependency>
-            <groupId>ai.djl.huggingface</groupId>
-            <artifactId>tokenizers</artifactId>
-            <version>${djl.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <!-- Jlama - Pure Java LLM Inference -->
@@ -85,18 +61,6 @@
             <groupId>de.kherud</groupId>
             <artifactId>llama</artifactId>
             <version>${java-llama-cpp.version}</version>
-        </dependency>
-
-        <!-- Spring WebFlux for SSE streaming -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-
-        <!-- Caffeine Cache -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
         </dependency>
 
         <!-- Lombok -->

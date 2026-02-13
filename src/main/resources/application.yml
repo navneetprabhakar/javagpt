@@ -6,24 +6,11 @@ server:
   port: 8080
 
 javagpt:
-  model:
-    name: "gpt2-medium"
-    cache-dir: "./models"
-    max-length: 512
-    temperature: 0.7
-    top-k: 50
-    top-p: 0.9
-
-  performance:
-    batch-size: 1
-    thread-pool-size: 4
-    enable-gpu: false
-
   llm:
-    enabled: false
-    engine: jlama              # Options: jlama, llamacpp
-    model-path: "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
-    max-tokens: 256
+    enabled: true
+    engine: llamacpp           # Options: jlama, llamacpp
+    model-path: "./models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+    max-tokens: 1024
     temperature: 0.7
     top-k: 40
     top-p: 0.9
