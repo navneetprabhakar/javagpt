@@ -158,6 +158,143 @@ server:
 | Warm Inference | 200-500 ms per request |
 | Sequential Throughput | 2-5 requests/second |
 
+---
+
+## Quantized Large Model Support (Jlama / llama.cpp)
+
+JavaGPT also supports running larger quantized models (7B+ parameters) using GGUF format through two inference engines.
+
+### Download a GGUF Model
+
+```bash
+chmod +x scripts/download-gguf-model.sh
+
+# TinyLlama 1.1B - great for testing (~670 MB)
+./scripts/download-gguf-model.sh tinyllama
+
+# Mistral 7B Instruct (~4.1 GB)
+./scripts/download-gguf-model.sh mistral-7b
+
+# Llama 2 7B Chat (~3.8 GB)
+./scripts/download-gguf-model.sh llama2-7b
+
+# Llama 2 13B Chat (~7.3 GB)
+./scripts/download-gguf-model.sh llama2-13b
+```
+
+### Enable the LLM Engine
+
+Edit `application.yml` to enable and configure:
+
+```yaml
+javagpt:
+  llm:
+    enabled: true
+    engine: jlama              # Options: jlama, llamacpp
+    model-path: "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+    max-tokens: 256
+    temperature: 0.7
+    top-k: 40
+    top-p: 0.9
+```
+
+### Run with LLM Support
+
+The application requires Java 21 preview features for the Jlama engine:
+
+```bash
+mvn spring-boot:run
+```
+
+Or manually:
+
+```bash
+java --enable-preview --add-modules jdk.incubator.vector \
+     -Xms2g -Xmx16g \
+     -jar target/javagpt-1.0.0.jar
+```
+
+### LLM API Usage
+
+#### Generate Text (JSON Response)
+
+**POST** `/api/v1/llm/generate`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/llm/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Explain quantum computing in simple terms",
+    "maxTokens": 200,
+    "temperature": 0.7
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "prompt": "Explain quantum computing in simple terms",
+  "generatedText": "Quantum computing uses quantum bits or qubits...",
+  "processingTimeMs": 1250,
+  "modelName": "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+  "engine": "jlama"
+}
+```
+
+#### Stream Text (Server-Sent Events)
+
+**POST** `/api/v1/llm/generate/stream`
+
+```bash
+curl -N -X POST http://localhost:8080/api/v1/llm/generate/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Write a short poem about Java",
+    "maxTokens": 100,
+    "temperature": 0.8
+  }'
+```
+
+Tokens are streamed in real-time as SSE events.
+
+#### Health Check
+
+```bash
+curl http://localhost:8080/api/v1/llm/health
+```
+
+**Response:**
+
+```json
+{
+  "status": "ready",
+  "engine": "jlama",
+  "modelPath": "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+}
+```
+
+### Choosing an Engine
+
+| Feature | Jlama | llama.cpp |
+|---------|-------|-----------|
+| Implementation | Pure Java | JNI (C++ backend) |
+| Quantization | Q4, Q8 | Q2-Q8 |
+| Dependencies | None (Java only) | Native libraries |
+| Memory management | JVM GC | Manual (AutoCloseable) |
+| Setup | Simple | Medium |
+| Best for | Simple integration | Maximum performance |
+
+To switch engines, change `javagpt.llm.engine` in `application.yml`:
+
+```yaml
+javagpt:
+  llm:
+    engine: llamacpp    # Switch to llama.cpp
+```
+
+---
+
 ## Troubleshooting
 
 ### OutOfMemoryError

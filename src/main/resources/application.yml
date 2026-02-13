@@ -19,6 +19,15 @@ javagpt:
     thread-pool-size: 4
     enable-gpu: false
 
+  llm:
+    enabled: false
+    engine: jlama              # Options: jlama, llamacpp
+    model-path: "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+    max-tokens: 256
+    temperature: 0.7
+    top-k: 40
+    top-p: 0.9
+
 management:
   endpoints:
     web:
