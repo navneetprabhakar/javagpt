@@ -4,11 +4,13 @@
 
 - **Java 21** installed
 - **Maven 3.8+** installed
-- **Python 3** with `transformers` package (for model download only)
 - **10-15 GB** free disk space
 - **MacBook Air M4 with 24GB RAM** (recommended) or equivalent
+- **Python 3** with `transformers` package (only needed for GPT-2 model downloads)
 
-## Quick Start
+## Quick Start — Quantized LLM (Recommended)
+
+The primary way to use JavaGPT is with quantized GGUF models via Jlama or llama.cpp. This lets you run models like Llama 2 7B, Mistral 7B, and TinyLlama locally.
 
 ### 1. Clone the Repository
 
@@ -17,154 +19,7 @@ git clone https://github.com/navneetprabhakar/javagpt.git
 cd javagpt
 ```
 
-### 2. Download the GPT-2 Model
-
-Before running the application, download the model weights:
-
-```bash
-chmod +x scripts/download-model.sh
-./scripts/download-model.sh gpt2-medium
-```
-
-**Available model sizes:**
-
-| Model | Parameters | RAM Usage | Disk Space |
-|-------|-----------|-----------|------------|
-| `gpt2` | 117M | 2-3 GB | ~500 MB |
-| `gpt2-medium` | 345M | 4-6 GB | ~1.5 GB |
-| `gpt2-large` | 774M | 8-12 GB | ~3 GB |
-| `gpt2-xl` | 1.5B | 16-20 GB | ~6 GB |
-
-To download a different model size:
-
-```bash
-./scripts/download-model.sh gpt2-large
-```
-
-### 3. Build the Project
-
-```bash
-mvn clean install -DskipTests
-```
-
-### 4. Run the Application
-
-```bash
-mvn spring-boot:run
-```
-
-Or with custom JVM settings for larger models:
-
-```bash
-java -Xms2g -Xmx10g \
-     -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=200 \
-     -jar target/javagpt-1.0.0.jar
-```
-
-The application starts on **port 8080** by default.
-
-## API Usage
-
-### Generate Text
-
-**POST** `/api/v1/generate`
-
-```bash
-curl -X POST http://localhost:8080/api/v1/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "The future of artificial intelligence is",
-    "maxTokens": 100,
-    "temperature": 0.7
-  }'
-```
-
-**Request Body:**
-
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `prompt` | String | Yes | - | Input text to generate from |
-| `maxTokens` | Integer | No | 512 | Maximum tokens to generate |
-| `temperature` | Double | No | 0.7 | Sampling temperature (0.0-1.0) |
-| `topK` | Integer | No | 50 | Top-K sampling parameter |
-| `topP` | Double | No | 0.9 | Top-P (nucleus) sampling parameter |
-
-**Response:**
-
-```json
-{
-  "prompt": "The future of artificial intelligence is",
-  "generatedText": "The future of artificial intelligence is bright and full of possibilities...",
-  "processingTimeMs": 340,
-  "inputTokens": 7,
-  "outputTokens": 50
-}
-```
-
-### Health Check
-
-```bash
-curl http://localhost:8080/api/v1/generate/health
-```
-
-### Actuator Endpoints
-
-```bash
-# Application health
-curl http://localhost:8080/actuator/health
-
-# Metrics
-curl http://localhost:8080/actuator/metrics
-```
-
-## Configuration
-
-Edit `src/main/resources/application.yml` to customize:
-
-```yaml
-javagpt:
-  model:
-    name: "gpt2-medium"       # Model variant
-    cache-dir: "./models"      # Model storage directory
-    max-length: 512            # Default max generation length
-    temperature: 0.7           # Default temperature
-    top-k: 50                  # Default top-k
-    top-p: 0.9                 # Default top-p
-
-  performance:
-    batch-size: 1              # Inference batch size
-    thread-pool-size: 4        # Worker threads
-    enable-gpu: false          # GPU acceleration (CPU only for Mac ARM)
-
-server:
-  port: 8080                   # Server port
-```
-
-## Understanding Generation Parameters
-
-- **temperature**: Controls randomness. Lower values (0.1-0.3) produce more focused/deterministic output. Higher values (0.7-1.0) produce more creative/diverse output.
-- **topK**: Limits sampling to the top K most probable tokens at each step.
-- **topP**: Nucleus sampling - considers tokens whose cumulative probability exceeds this threshold.
-- **maxTokens**: Maximum number of tokens to generate in the response.
-
-## Performance Expectations
-
-| Metric | Value |
-|--------|-------|
-| Cold Start | 10-15 seconds |
-| Prompt Processing | 50-100 ms |
-| Token Generation | 20-40 tokens/second |
-| Warm Inference | 200-500 ms per request |
-| Sequential Throughput | 2-5 requests/second |
-
----
-
-## Quantized Large Model Support (Jlama / llama.cpp)
-
-JavaGPT also supports running larger quantized models (7B+ parameters) using GGUF format through two inference engines.
-
-### Download a GGUF Model
+### 2. Download a GGUF Model
 
 ```bash
 chmod +x scripts/download-gguf-model.sh
@@ -182,9 +37,9 @@ chmod +x scripts/download-gguf-model.sh
 ./scripts/download-gguf-model.sh llama2-13b
 ```
 
-### Enable the LLM Engine
+### 3. Enable the LLM Engine
 
-Edit `application.yml` to enable and configure:
+Edit `src/main/resources/application.yml`:
 
 ```yaml
 javagpt:
@@ -198,25 +53,33 @@ javagpt:
     top-p: 0.9
 ```
 
-### Run with LLM Support
+### 4. Build the Project
 
-The application requires Java 21 preview features for the Jlama engine:
+```bash
+mvn clean install -DskipTests
+```
+
+### 5. Run the Application
 
 ```bash
 mvn spring-boot:run
 ```
 
-Or manually:
+Or with custom JVM settings for larger models:
 
 ```bash
 java --enable-preview --add-modules jdk.incubator.vector \
      -Xms2g -Xmx16g \
+     -XX:+UseG1GC \
+     -XX:MaxGCPauseMillis=200 \
      -jar target/javagpt-1.0.0.jar
 ```
 
-### LLM API Usage
+The application starts on **port 8080** by default.
 
-#### Generate Text (JSON Response)
+## LLM API Usage
+
+### Generate Text (JSON Response)
 
 **POST** `/api/v1/llm/generate`
 
@@ -230,6 +93,16 @@ curl -X POST http://localhost:8080/api/v1/llm/generate \
   }'
 ```
 
+**Request Body:**
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `prompt` | String | Yes | - | Input text to generate from |
+| `maxTokens` | Integer | No | 256 | Maximum tokens to generate |
+| `temperature` | Float | No | 0.7 | Sampling temperature (0.0-1.0) |
+| `topK` | Integer | No | 40 | Top-K sampling parameter |
+| `topP` | Float | No | 0.9 | Top-P (nucleus) sampling parameter |
+
 **Response:**
 
 ```json
@@ -242,7 +115,7 @@ curl -X POST http://localhost:8080/api/v1/llm/generate \
 }
 ```
 
-#### Stream Text (Server-Sent Events)
+### Stream Text (Server-Sent Events)
 
 **POST** `/api/v1/llm/generate/stream`
 
@@ -256,9 +129,9 @@ curl -N -X POST http://localhost:8080/api/v1/llm/generate/stream \
   }'
 ```
 
-Tokens are streamed in real-time as SSE events.
+Tokens are streamed in real-time as SSE events — ideal for chat-style UIs.
 
-#### Health Check
+### Health Check
 
 ```bash
 curl http://localhost:8080/api/v1/llm/health
@@ -274,7 +147,9 @@ curl http://localhost:8080/api/v1/llm/health
 }
 ```
 
-### Choosing an Engine
+## Choosing an Engine
+
+JavaGPT supports two inference engines for quantized models. Switch between them via `javagpt.llm.engine` in `application.yml`:
 
 | Feature | Jlama | llama.cpp |
 |---------|-------|-----------|
@@ -285,12 +160,126 @@ curl http://localhost:8080/api/v1/llm/health
 | Setup | Simple | Medium |
 | Best for | Simple integration | Maximum performance |
 
-To switch engines, change `javagpt.llm.engine` in `application.yml`:
+```yaml
+# Use Jlama (default)
+javagpt:
+  llm:
+    engine: jlama
+
+# Or switch to llama.cpp
+javagpt:
+  llm:
+    engine: llamacpp
+```
+
+## Understanding Generation Parameters
+
+- **temperature**: Controls randomness. Lower values (0.1-0.3) produce more focused/deterministic output. Higher values (0.7-1.0) produce more creative/diverse output.
+- **topK**: Limits sampling to the top K most probable tokens at each step.
+- **topP**: Nucleus sampling — considers tokens whose cumulative probability exceeds this threshold.
+- **maxTokens**: Maximum number of tokens to generate in the response.
+
+## LLM Configuration Reference
 
 ```yaml
 javagpt:
   llm:
-    engine: llamacpp    # Switch to llama.cpp
+    enabled: true              # Enable/disable LLM engine
+    engine: jlama              # jlama or llamacpp
+    model-path: "./models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
+    max-tokens: 256            # Default max generation length
+    temperature: 0.7           # Default temperature
+    top-k: 40                  # Default top-k
+    top-p: 0.9                 # Default top-p
+
+server:
+  port: 8080                   # Server port
+```
+
+---
+
+## GPT-2 Mode (Lightweight Alternative)
+
+For smaller-scale experimentation, JavaGPT also includes a GPT-2 module powered by DJL + PyTorch. This runs independently of the LLM engine.
+
+### Download the GPT-2 Model
+
+```bash
+chmod +x scripts/download-model.sh
+./scripts/download-model.sh gpt2-medium
+```
+
+**Available model sizes:**
+
+| Model | Parameters | RAM Usage | Disk Space |
+|-------|-----------|-----------|------------|
+| `gpt2` | 117M | 2-3 GB | ~500 MB |
+| `gpt2-medium` | 345M | 4-6 GB | ~1.5 GB |
+| `gpt2-large` | 774M | 8-12 GB | ~3 GB |
+| `gpt2-xl` | 1.5B | 16-20 GB | ~6 GB |
+
+### GPT-2 API Usage
+
+**POST** `/api/v1/generate`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "The future of artificial intelligence is",
+    "maxTokens": 100,
+    "temperature": 0.7
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "prompt": "The future of artificial intelligence is",
+  "generatedText": "The future of artificial intelligence is bright and full of possibilities...",
+  "processingTimeMs": 340,
+  "inputTokens": 7,
+  "outputTokens": 50
+}
+```
+
+### GPT-2 Configuration
+
+```yaml
+javagpt:
+  model:
+    name: "gpt2-medium"       # Model variant
+    cache-dir: "./models"      # Model storage directory
+    max-length: 512            # Default max generation length
+    temperature: 0.7           # Default temperature
+    top-k: 50                  # Default top-k
+    top-p: 0.9                 # Default top-p
+
+  performance:
+    batch-size: 1              # Inference batch size
+    thread-pool-size: 4        # Worker threads
+    enable-gpu: false          # GPU acceleration (CPU only for Mac ARM)
+```
+
+### GPT-2 Performance Expectations
+
+| Metric | Value |
+|--------|-------|
+| Cold Start | 10-15 seconds |
+| Prompt Processing | 50-100 ms |
+| Token Generation | 20-40 tokens/second |
+| Warm Inference | 200-500 ms per request |
+| Sequential Throughput | 2-5 requests/second |
+
+### Actuator Endpoints
+
+```bash
+# Application health
+curl http://localhost:8080/actuator/health
+
+# Metrics
+curl http://localhost:8080/actuator/metrics
 ```
 
 ---
@@ -298,18 +287,32 @@ javagpt:
 ## Troubleshooting
 
 ### OutOfMemoryError
-- Use a smaller model (`gpt2` instead of `gpt2-medium`)
-- Increase JVM heap: `java -Xmx12g -jar target/javagpt-1.0.0.jar`
+- Use a smaller model (e.g., `tinyllama` instead of `mistral-7b`)
+- Increase JVM heap: `java -Xmx16g --enable-preview --add-modules jdk.incubator.vector -jar target/javagpt-1.0.0.jar`
 
 ### Slow First Request
 - This is expected due to model loading. Subsequent requests will be faster.
-- Cached responses (identical prompts) return instantly.
+- Cached responses (identical prompts) return instantly via Caffeine cache.
 
-### Native Library Not Found
+### LLM Engine Not Starting
+- Ensure `javagpt.llm.enabled` is set to `true` in `application.yml`
+- Verify the GGUF model file exists at the configured `model-path`
+- Check logs for engine initialization errors
+
+### Native Library Not Found (llama.cpp)
+- Ensure `de.kherud:llama` dependency is present in `pom.xml`
+- Verify your platform is supported (macOS ARM64, Linux x86-64)
+
+### Jlama Vector API Warnings
+- These are expected with `--enable-preview` on Java 21
+- The Vector API is incubating and will be stable in future Java releases
+
+### Native Library Not Found (GPT-2 / DJL)
 - Ensure the correct PyTorch native dependency for your platform is in `pom.xml`
 - For Mac ARM64: `pytorch-native-cpu` with classifier `osx-aarch64`
 
 ### Model Download Fails
 - Check your internet connection
 - Verify HuggingFace is accessible
-- Try the manual download script: `./scripts/download-model.sh`
+- For GGUF: `./scripts/download-gguf-model.sh tinyllama`
+- For GPT-2: `./scripts/download-model.sh gpt2-medium`
